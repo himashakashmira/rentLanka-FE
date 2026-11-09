@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Check, CircleHelp, FileText, Filter, ImagePlus, MapPin, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, UserRound, Users, Wrench } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { bookingRows, categoryItems, locations, rentalItems } from '../data/sampleData';
@@ -8,8 +8,52 @@ import RentalCard from '../components/ui/RentalCard';
 const field = (label, control) => <label className="form-field"><span>{label}</span>{control}</label>;
 
 export function ExplorePage() {
-  const [query, setQuery] = useState(''); const [category, setCategory] = useState('All categories'); const [location, setLocation] = useState('All locations'); const [availability, setAvailability] = useState('Any availability'); const [sort, setSort] = useState('Popular');
-  const filtered = useMemo(() => rentalItems.filter((item) => (!query || item.title.toLowerCase().includes(query.toLowerCase())) && (category === 'All categories' || item.category === category) && (location === 'All locations' || item.location.includes(location)) && (availability === 'Any availability' || (availability === 'Available now' ? item.available : !item.available))).sort((a, b) => sort === 'Price: low to high' ? a.price - b.price : sort === 'Price: high to low' ? b.price - a.price : b.popularity - a.popularity), [query, category, location, availability, sort]);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All categories');
+  const [location, setLocation] = useState('All locations');
+  const [availability, setAvailability] = useState('Any availability');
+  const [sort, setSort] = useState('Popular');
+
+  // live backend items
+  const [liveItems, setLiveItems] = useState([]);
+
+  useEffect(() => {
+    // get items from backend api
+    fetch('http://localhost:5000/api/v1/items')
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data && result.data.length > 0) {
+          // format to match rental card props
+          const formatted = result.data.map(item => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+            location: item.location,
+            price: Number(item.price_per_day),
+            deposit: 15000,
+            rating: 4.9,
+            reviews: 12,
+            available: item.is_available,
+            popularity: 80,
+            image: item.image_url || 'car',
+            imageUrl: item.image_url
+          }));
+          setLiveItems(formatted);
+        } else {
+          setLiveItems(rentalItems);
+        }
+      })
+      .catch((err) => {
+        console.log("api error, use sample", err);
+        setLiveItems(rentalItems);
+      });
+  }, []);
+
+  const filtered = useMemo(() => {
+    const list = liveItems.length > 0 ? liveItems : rentalItems;
+    return list.filter((item) => (!query || item.title.toLowerCase().includes(query.toLowerCase())) && (category === 'All categories' || item.category === category) && (location === 'All locations' || item.location.includes(location)) && (availability === 'Any availability' || (availability === 'Available now' ? item.available : !item.available))).sort((a, b) => sort === 'Price: low to high' ? a.price - b.price : sort === 'Price: high to low' ? b.price - a.price : b.popularity - a.popularity);
+  }, [liveItems, query, category, location, availability, sort]);
+
   return <section className="market-page"><div className="app-container"><PageIntro eyebrow="Explore the marketplace" title="Find your next rental" description="Quality gear, vehicles and everyday essentials from trusted local hosts." action={<Link className="primary-button" to="/categories">Browse categories <ArrowRight size={16} /></Link>} /><div className="explore-toolbar"><div className="market-search"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by item name" aria-label="Search by item name" /></div><div className="filter-trigger"><Filter size={16} /> Filters</div></div><div className="filter-row">{field('Category', <select value={category} onChange={(e) => setCategory(e.target.value)}><option>All categories</option>{categoryItems.map((item) => <option key={item.name}>{item.name}</option>)}</select>)}{field('Location', <select value={location} onChange={(e) => setLocation(e.target.value)}><option>All locations</option>{locations.map((item) => <option key={item}>{item}</option>)}</select>)}{field('Availability', <select value={availability} onChange={(e) => setAvailability(e.target.value)}><option>Any availability</option><option>Available now</option><option>Currently booked</option></select>)}{field('Sort by', <select value={sort} onChange={(e) => setSort(e.target.value)}><option>Popular</option><option>Price: low to high</option><option>Price: high to low</option></select>)}<button className="filter-reset" type="button" onClick={() => { setQuery(''); setCategory('All categories'); setLocation('All locations'); setAvailability('Any availability'); }}>Reset</button></div><div className="results-heading"><strong>{filtered.length} rentals</strong><span>Updated today · Trusted local hosts</span></div><div className="market-grid">{filtered.length ? filtered.map((item) => <RentalCard item={item} key={item.id} />) : <div className="empty-panel"><Search size={28} /><h2>No rentals found</h2><p>Try a broader search or reset your filters.</p></div>}</div></div></section>;
 }
 
@@ -21,7 +65,152 @@ export function HowItWorksPage() { return <section className="market-page"><div 
 
 export function AuthPage({ mode = 'login' }) { const isLogin = mode === 'login'; return <section className="auth-page"><div className="auth-panel"><div className="auth-intro"><span className="auth-logo">R</span><p className="eyebrow">Welcome to RentLanka</p><h1>{isLogin ? 'Good to see you again.' : 'Make room for more.'}</h1><p>{isLogin ? 'Log in to manage bookings, saved rentals and your listings.' : 'Create an account and start renting smarter today.'}</p></div><form className="auth-form" onSubmit={(e) => e.preventDefault()}>{!isLogin && <div className="account-choice"><button type="button" className="selected"><UserRound size={17} /> I want to rent</button><button type="button"><Sparkles size={17} /> I want to list items</button></div>}{field('Email address', <input type="email" placeholder="you@example.com" required />)}{field('Password', <input type="password" placeholder="At least 8 characters" required />)}{!isLogin && field('Full name', <input placeholder="Your full name" required />)}<button className="primary-button full-button" type="submit">{isLogin ? 'Log in' : 'Create account'} <ArrowRight size={16} /></button><p className="auth-switch">{isLogin ? 'New to RentLanka?' : 'Already have an account?'} <Link to={isLogin ? '/register' : '/login'}>{isLogin ? 'Create an account' : 'Log in'}</Link></p></form></div></section>; }
 
-export function ListItemPage() { const [submitted, setSubmitted] = useState(false); return <section className="market-page form-page"><div className="app-container"><PageIntro eyebrow="Share what you own" title="List your item" description="Give your item a second life and earn from it when you are not using it." /><form className="listing-form" onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}><div className="form-section"><div className="form-section-heading"><FileText /><div><h2>Item details</h2><p>Help renters understand exactly what they are booking.</p></div></div>{field('Item name', <input placeholder="e.g. Toyota Corolla Cross" required />)}<div className="two-fields">{field('Category', <select required><option value="">Select a category</option>{categoryItems.map((item) => <option key={item.name}>{item.name}</option>)}</select>)}{field('Location', <select required><option value="">Select a location</option>{locations.map((item) => <option key={item}>{item}</option>)}</select>)}</div>{field('Description', <textarea rows="5" placeholder="Describe what makes your item special, what is included and any requirements." required />)}</div><div className="form-section"><div className="form-section-heading"><ImagePlus /><div><h2>Photos and pricing</h2><p>Clear photos and transparent pricing build trust.</p></div></div><label className="upload-box"><ImagePlus size={23} /><strong>Upload item photos</strong><span>PNG or JPG · Up to 10MB each</span><input type="file" accept="image/png,image/jpeg" multiple /></label><div className="two-fields">{field('Daily price (LKR)', <input type="number" min="1" placeholder="8500" required />)}{field('Refundable deposit (LKR)', <input type="number" min="0" placeholder="25000" required />)}</div></div><div className="form-actions"><Link className="secondary-button" to="/">Cancel</Link><button className="primary-button" type="submit">{submitted ? 'Listing saved' : 'Publish listing'} <ArrowRight size={16} /></button></div>{submitted && <p className="success-note centered" role="status"><Check size={15} /> Your sample listing is ready for review.</p>}</form></div></section>; }
+// Form to add new rental item with computer file upload
+export function ListItemPage() {
+  // form state variables
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
+  const [pricePerDay, setPricePerDay] = useState('');
+  const [imageUrl, setImageUrl] = useState(''); // stores base64 image from computer
+  const [fileName, setFileName] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  // read image file from computer
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name);
+      // convert image to string format
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result); // base64 string
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // handle submit to backend api
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const newItem = {
+      title,
+      category,
+      location,
+      description,
+      price_per_day: Number(pricePerDay),
+      // use uploaded photo from pc or fallback
+      image_url: imageUrl || 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc',
+      contact_number: contactNumber || '0771234567'
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newItem)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      console.log('error saving item', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="market-page form-page">
+      <div className="app-container">
+        <PageIntro eyebrow="Share what you own" title="List your item" description="Give your item a second life and earn from it when you are not using it." />
+        <form className="listing-form" onSubmit={handleSubmit}>
+          <div className="form-section">
+            <div className="form-section-heading">
+              <FileText />
+              <div>
+                <h2>Item details</h2>
+                <p>Help renters understand exactly what they are booking.</p>
+              </div>
+            </div>
+            {field('Item name', <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Honda Vezel 2019 or Nikon D750" required />)}
+            <div className="two-fields">
+              {field('Category', (
+                <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+                  <option value="">Select a category</option>
+                  {categoryItems.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+                </select>
+              ))}
+              {field('Location', (
+                <select value={location} onChange={(e) => setLocation(e.target.value)} required>
+                  <option value="">Select a location</option>
+                  {locations.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              ))}
+            </div>
+            {field('Contact Number', <input value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} placeholder="e.g. 0771234567" required />)}
+            {field('Description', <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="4" placeholder="Describe your item condition, terms, and specs." required />)}
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-heading">
+              <ImagePlus />
+              <div>
+                <h2>Photos and pricing</h2>
+                <p>Upload a real photo from your computer and set price.</p>
+              </div>
+            </div>
+
+            {/* Real computer file upload */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="upload-box" style={{ cursor: 'pointer', display: 'block', border: '2px dashed #94a3b8', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                <ImagePlus size={30} style={{ margin: '0 auto 8px auto', color: '#0f766e' }} />
+                <strong>{fileName ? `Selected: ${fileName}` : 'Click here to choose a photo from your computer'}</strong>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>PNG, JPG or JPEG</p>
+                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+              </label>
+
+              {/* image preview */}
+              {imageUrl && (
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', marginBottom: '6px' }}>Photo Preview:</p>
+                  <img src={imageUrl} alt="preview" style={{ width: '140px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                </div>
+              )}
+            </div>
+
+            <div className="two-fields">
+              {field('Daily price (LKR)', <input type="number" min="1" value={pricePerDay} onChange={(e) => setPricePerDay(e.target.value)} placeholder="5000" required />)}
+              {field('Refundable deposit (LKR)', <input type="number" min="0" placeholder="10000" />)}
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <Link className="secondary-button" to="/">Cancel</Link>
+            <button className="primary-button" type="submit" disabled={loading}>
+              {loading ? 'Saving...' : submitted ? 'Listing Published!' : 'Publish listing'} <ArrowRight size={16} />
+            </button>
+          </div>
+
+          {submitted && (
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <p className="success-note centered" role="status"><Check size={15} /> Your item with photo has been published to Supabase!</p>
+              <Link className="primary-button" to="/" style={{ display: 'inline-block', marginTop: '10px' }}>Go to Homepage to see it</Link>
+            </div>
+          )}
+        </form>
+      </div>
+    </section>
+  );
+}
 
 export function MyBookingsPage() { const [rows, setRows] = useState(bookingRows); return <section className="market-page"><div className="app-container"><PageIntro eyebrow="Your account" title="My bookings" description="Keep track of upcoming pick-ups and your rental history." action={<Link className="secondary-button" to="/explore">Find another rental</Link>} /><div className="account-tabs"><span className="active">All bookings</span><span>Upcoming</span><span>Past</span></div><div className="booking-list">{rows.map((row) => <article className="booking-row" key={row.id}><div className={`booking-thumb ${row.image}`} /><div className="booking-row-main"><span>{row.id} · {row.dates}</span><h2>{row.item}</h2><p><CalendarDays size={14} /> Pick-up details shared after confirmation</p></div><div className="booking-row-side"><strong>{row.total}</strong><span className={`status ${row.status.toLowerCase()}`}>{row.status}</span>{row.status === 'Confirmed' && <button type="button" onClick={() => setRows(rows.map((item) => item.id === row.id ? { ...item, status: 'Cancelled' } : item))}>Cancel booking</button>}</div></article>)}</div></div></section>; }
 

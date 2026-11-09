@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -36,11 +36,12 @@ const categories = [
   { label: 'Events', icon: 'event', count: '290 items' },
 ];
 
-const rentals = [
-  { title: 'Toyota Corolla Cross', category: 'Vehicles', location: 'Colombo 03', price: '8,500', rating: '4.9', reviews: 28, image: 'car' },
-  { title: 'Sony A7 IV Camera Kit', category: 'Cameras', location: 'Colombo 07', price: '4,000', rating: '5.0', reviews: 16, image: 'camera' },
-  { title: 'Honda Dio 2024', category: 'Motorcycles', location: 'Negombo', price: '2,500', rating: '4.8', reviews: 42, image: 'scooter' },
-  { title: 'Makita Power Tool Set', category: 'Tools & Machinery', location: 'Kandy', price: '3,200', rating: '4.9', reviews: 19, image: 'tools' },
+// default backup data if backend not connected
+const defaultRentals = [
+  { title: 'Toyota Corolla Cross', category: 'Vehicles', location: 'Colombo 03', price_per_day: '8500', rating: '4.9', reviews: 28 },
+  { title: 'Sony A7 IV Camera Kit', category: 'Cameras', location: 'Colombo 07', price_per_day: '4000', rating: '5.0', reviews: 16 },
+  { title: 'Honda Dio 2024', category: 'Motorcycles', location: 'Negombo', price_per_day: '2500', rating: '4.8', reviews: 42 },
+  { title: 'Makita Power Tool Set', category: 'Tools & Machinery', location: 'Kandy', price_per_day: '3200', rating: '4.9', reviews: 19 },
 ];
 
 const locations = [
@@ -69,10 +70,32 @@ function App() {
   const [searchMessage, setSearchMessage] = useState('');
   const [saved, setSaved] = useState([]);
 
+  // live backend items state
+  const [items, setItems] = useState([]);
+
+  // call api on page load
+  useEffect(() => {
+    fetch('http://localhost:5000/api/v1/items')
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data && result.data.length > 0) {
+          setItems(result.data);
+        } else {
+          setItems(defaultRentals);
+        }
+      })
+      .catch((err) => {
+        console.log("api error, using default", err);
+        setItems(defaultRentals);
+      });
+  }, []);
+
+  // filter rentals by category
   const visibleRentals = useMemo(() => {
-    if (activeCategory === 'All categories') return rentals;
-    return rentals.filter((rental) => rental.category === activeCategory || (activeCategory === 'Construction' && rental.category === 'Tools & Machinery'));
-  }, [activeCategory]);
+    const list = items.length > 0 ? items : defaultRentals;
+    if (activeCategory === 'All categories') return list;
+    return list.filter((rental) => rental.category === activeCategory);
+  }, [activeCategory, items]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -145,9 +168,48 @@ function App() {
           </div>
         </section>
 
+        {/* Featured rentals section with live database items */}
         <section className="section featured-section" id="featured">
-          <div className="container"><div className="section-heading"><div><p className="eyebrow">Curated for you</p><h2>Featured rentals</h2></div><Link className="text-link" to="/explore">Explore all rentals <ArrowRight size={16} /></Link></div>
-            <div className="rental-grid">{visibleRentals.length ? visibleRentals.map((rental) => <article className="rental-card" key={rental.title}><div className={`rental-image ${rental.image}`} style={{ backgroundImage: `url(${rentalCollage})` }} role="img" aria-label={rental.title}><span className="availability">Available now</span><button className={saved.includes(rental.title) ? 'save-button saved' : 'save-button'} type="button" aria-label={saved.includes(rental.title) ? `Remove ${rental.title} from saved rentals` : `Save ${rental.title}`} onClick={() => toggleSaved(rental.title)}><Heart size={18} fill={saved.includes(rental.title) ? 'currentColor' : 'none'} /></button></div><div className="rental-info"><div className="rental-title-row"><div><p className="rental-category">{rental.category}</p><h3>{rental.title}</h3></div><span className="rental-rating"><Star size={14} fill="currentColor" /> {rental.rating}</span></div><p className="rental-location"><MapPin size={14} /> {rental.location}</p><div className="rental-footer"><p><strong>LKR {rental.price}</strong> <span>/ day</span></p><span className="review-count">({rental.reviews} reviews)</span><button type="button" className="details-link" onClick={() => setSearchMessage(`${rental.title} is available to view in ${rental.location}.`)}>View details <ChevronRight size={14} /></button></div></div></article>) : <p className="empty-state">No featured rentals match this category yet. Try All categories.</p>}</div>
+          <div className="container">
+            <div className="section-heading"><div><p className="eyebrow">Curated for you</p><h2>Featured rentals</h2></div><Link className="text-link" to="/explore">Explore all rentals <ArrowRight size={16} /></Link></div>
+            <div className="rental-grid">
+              {visibleRentals.length ? visibleRentals.map((rental) => (
+                <article className="rental-card" key={rental.id || rental.title}>
+                  <div
+                    className="rental-image"
+                    style={{
+                      backgroundImage: rental.image_url ? `url(${rental.image_url})` : `url(${rentalCollage})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                    role="img"
+                    aria-label={rental.title}
+                  >
+                    <span className="availability">Available now</span>
+                    <button className={saved.includes(rental.title) ? 'save-button saved' : 'save-button'} type="button" aria-label="save rental" onClick={() => toggleSaved(rental.title)}>
+                      <Heart size={18} fill={saved.includes(rental.title) ? 'currentColor' : 'none'} />
+                    </button>
+                  </div>
+                  <div className="rental-info">
+                    <div className="rental-title-row">
+                      <div>
+                        <p className="rental-category">{rental.category}</p>
+                        <h3>{rental.title}</h3>
+                      </div>
+                      <span className="rental-rating"><Star size={14} fill="currentColor" /> {rental.rating || '4.9'}</span>
+                    </div>
+                    <p className="rental-location"><MapPin size={14} /> {rental.location}</p>
+                    <div className="rental-footer">
+                      <p><strong>LKR {rental.price_per_day}</strong> <span>/ day</span></p>
+                      <span className="review-count">({rental.reviews || '12'} reviews)</span>
+                      <button type="button" className="details-link" onClick={() => setSearchMessage(`${rental.title} is available in ${rental.location}. Contact: ${rental.contact_number || 'N/A'}`)}>
+                        View details <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )) : <p className="empty-state">No featured rentals match this category yet. Try All categories.</p>}
+            </div>
           </div>
         </section>
 
