@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Check, CircleHelp, FileText, Filter, ImagePlus, MapPin, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, UserRound, Users, Wrench } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Check, CircleHelp, FileText, Filter, ImagePlus, MapPin, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, UserRound, Users, Wrench, X } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { bookingRows, categoryItems, locations, rentalItems } from '../data/sampleData';
 import PageIntro from '../components/ui/PageIntro';
@@ -13,17 +13,13 @@ export function ExplorePage() {
   const [location, setLocation] = useState('All locations');
   const [availability, setAvailability] = useState('Any availability');
   const [sort, setSort] = useState('Popular');
-
-  // live backend items
   const [liveItems, setLiveItems] = useState([]);
 
   useEffect(() => {
-    // get items from backend api
     fetch('http://localhost:5000/api/v1/items')
       .then((res) => res.json())
       .then((result) => {
         if (result.success && result.data && result.data.length > 0) {
-          // format to match rental card props
           const formatted = result.data.map(item => ({
             id: item.id,
             title: item.title,
@@ -59,7 +55,182 @@ export function ExplorePage() {
 
 export function CategoriesPage() { return <section className="market-page"><div className="app-container"><PageIntro eyebrow="Find the right fit" title="Browse by category" description="From a weekend adventure to the tools for your next project, find it nearby." /><div className="category-market-grid">{categoryItems.map((item) => <Link to={`/explore?category=${encodeURIComponent(item.name)}`} className="category-market-card" key={item.name}><div className={`category-market-icon ${item.icon}`}>{item.icon === 'camera' ? <Sparkles /> : item.icon === 'tools' ? <Wrench /> : item.icon === 'outdoor' ? <Star /> : <SlidersHorizontal />}</div><div><span>{item.count}</span><h2>{item.name}</h2><p>{item.description}</p></div><ArrowRight /></Link>)}</div></div></section>; }
 
-export function RentalDetailsPage() { const { id } = useParams(); const item = rentalItems.find((rental) => rental.id === id) || rentalItems[0]; const [submitted, setSubmitted] = useState(false); return <section className="market-page detail-page"><div className="app-container"><Link className="back-link" to="/explore"><ArrowLeft size={15} /> Back to explore</Link><div className="detail-layout"><div><div className="detail-gallery"><div className={`detail-main-image ${item.image}`} /><div className={`detail-thumb ${item.image}`} /><div className="detail-thumb alt-thumb" /><div className="detail-thumb third-thumb" /></div><div className="detail-copy"><div className="market-card-meta"><span>{item.category}</span><span className="market-rating"><Star size={13} fill="currentColor" /> {item.rating} ({item.reviews} reviews)</span></div><h1>{item.title}</h1><p className="market-location"><MapPin size={15} /> {item.location} · Hosted by {item.owner}</p><p className="detail-description">{item.description}</p><div className="trust-row"><span><ShieldCheck size={18} /> Verified host</span><span><BadgeCheck size={18} /> Quality checked</span><span><CircleHelp size={18} /> Support included</span></div></div></div><aside className="booking-card"><div className="booking-price"><strong>LKR {item.price.toLocaleString()}</strong><span>/ day</span></div><p className="booking-note">Refundable deposit: LKR {item.deposit.toLocaleString()}</p><form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}>{field('Pick-up date', <input type="date" required />)}{field('Return date', <input type="date" required />)}<button className="primary-button full-button" type="submit">{submitted ? 'Request sent' : 'Request to book'} <ArrowRight size={16} /></button></form>{submitted && <p className="success-note" role="status"><Check size={15} /> Your request is ready for the host.</p>}<div className="owner-row"><span className="owner-avatar">{item.owner.split(' ').map((name) => name[0]).join('')}</span><div><strong>{item.owner}</strong><span>Usually responds within an hour</span></div></div></aside></div></div></section>; }
+// Single item details page with working booking form & real database data
+export function RentalDetailsPage() {
+  const { id } = useParams();
+
+  // item details state
+  const [item, setItem] = useState(null);
+  const [loadingItem, setLoadingItem] = useState(true);
+
+  // booking form states
+  const [renterName, setRenterName] = useState('');
+  const [renterPhone, setRenterPhone] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  // fetch single item details from backend
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/v1/items/${id}`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.success && result.data) {
+          setItem(result.data);
+        }
+        setLoadingItem(false);
+      })
+      .catch((err) => {
+        console.log("error fetch item details", err);
+        setLoadingItem(false);
+      });
+  }, [id]);
+
+  // handle book request submit to backend
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const bookingData = {
+      item_id: item?.id,
+      item_title: item?.title,
+      renter_name: renterName,
+      renter_phone: renterPhone,
+      start_date: startDate,
+      end_date: endDate,
+      total_price: Number(item?.price_per_day || 5000) * 3 // estimate for 3 days
+    };
+
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      console.log('error sending booking', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loadingItem) {
+    return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading item details from database...</div>;
+  }
+
+  if (!item) {
+    return (
+      <div style={{ padding: '4rem', textAlign: 'center' }}>
+        <h2>Item not found</h2>
+        <Link to="/" className="primary-button" style={{ display: 'inline-block', marginTop: '1rem' }}>Back to Home</Link>
+      </div>
+    );
+  }
+
+  return (
+    <section className="market-page detail-page">
+      <div className="app-container">
+        <Link className="back-link" to="/"><ArrowLeft size={15} /> Back to explore</Link>
+
+        <div className="detail-layout">
+          <div>
+            {/* Real item image */}
+            <div style={{ marginBottom: '1.5rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+              <img
+                src={item.image_url}
+                alt={item.title}
+                style={{ width: '100%', maxHeight: '420px', objectFit: 'cover' }}
+              />
+            </div>
+
+            <div className="detail-copy">
+              <div className="market-card-meta">
+                <span style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
+                  {item.category}
+                </span>
+
+                {/* Availability status badge */}
+                <span style={{
+                  backgroundColor: item.is_available ? '#dcfce7' : '#fee2e2',
+                  color: item.is_available ? '#166534' : '#991b1b',
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold'
+                }}>
+                  {item.is_available ? 'Available Now' : 'Currently Booked'}
+                </span>
+
+                <span className="market-rating"><Star size={13} fill="currentColor" /> 4.9 (Verified)</span>
+              </div>
+
+              <h1 style={{ marginTop: '0.8rem' }}>{item.title}</h1>
+              <p className="market-location"><MapPin size={15} /> {item.location} · Contact: <b>{item.contact_number || '0771234567'}</b></p>
+
+              <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>Item Description & Condition</h3>
+              <p className="detail-description" style={{ fontSize: '15px', lineHeight: '1.6' }}>
+                {item.description || "No specific description provided. Inspected and verified by owner."}
+              </p>
+
+              <div className="trust-row" style={{ marginTop: '1.5rem' }}>
+                <span><ShieldCheck size={18} /> Verified item condition</span>
+                <span><BadgeCheck size={18} /> Quality checked</span>
+                <span><CircleHelp size={18} /> Support included</span>
+              </div>
+            </div>
+          </div>
+
+          <aside className="booking-card">
+            <div className="booking-price">
+              <strong>LKR {Number(item.price_per_day).toLocaleString()}</strong>
+              <span>/ day</span>
+            </div>
+            <p className="booking-note">Security Deposit: LKR 10,000 (Refundable)</p>
+
+            {item.is_available ? (
+              <form onSubmit={handleBookingSubmit}>
+                {field('Your Full Name', <input value={renterName} onChange={(e) => setRenterName(e.target.value)} placeholder="Kasun Perera" required />)}
+                {field('Phone Number', <input value={renterPhone} onChange={(e) => setRenterPhone(e.target.value)} placeholder="0771234567" required />)}
+                {field('Pick-up date', <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />)}
+                {field('Return date', <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />)}
+
+                <button className="primary-button full-button" type="submit" disabled={loading}>
+                  {loading ? 'Sending request...' : submitted ? 'Request Sent!' : 'Request to Book'} <ArrowRight size={16} />
+                </button>
+              </form>
+            ) : (
+              <div style={{ padding: '1.5rem', backgroundColor: '#fee2e2', borderRadius: '8px', textAlign: 'center', marginTop: '1rem' }}>
+                <strong style={{ color: '#991b1b' }}>Currently Rented Out</strong>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#7f1d1d' }}>This item is booked by another customer. Please check back later.</p>
+              </div>
+            )}
+
+            {submitted && (
+              <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                <p className="success-note" role="status"><Check size={15} /> Your booking request has been sent to the host!</p>
+                <Link to="/admin" className="text-link" style={{ fontSize: '13px', display: 'block', marginTop: '8px', color: '#0f766e', fontWeight: 'bold' }}>
+                  Go to Admin Panel to see & confirm this request →
+                </Link>
+              </div>
+            )}
+
+            <div className="owner-row">
+              <span className="owner-avatar">LK</span>
+              <div>
+                <strong>RentLanka Host</strong>
+                <span>Usually responds within an hour</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function HowItWorksPage() { return <section className="market-page"><div className="app-container"><PageIntro eyebrow="Simple by design" title="Renting made easy" description="A safer, more personal way to get the things you need and earn from the things you own." /><div className="audience-grid"><div className="audience-card renter"><span className="audience-number">01</span><Users size={26} /><h2>For renters</h2><p>Find trusted items close to home, book with confidence and enjoy more without buying more.</p><ol><li><b>Search nearby</b><span>Explore quality items by category, dates or location.</span></li><li><b>Book securely</b><span>Send a request and agree on pick-up details with your host.</span></li><li><b>Enjoy the experience</b><span>Collect your item, make memories and return it on time.</span></li></ol><Link className="text-button" to="/explore">Explore rentals <ArrowRight size={15} /></Link></div><div className="audience-card host"><span className="audience-number">02</span><Sparkles size={26} /><h2>For item owners</h2><p>Turn underused belongings into income while meeting respectful people in your community.</p><ol><li><b>Create your listing</b><span>Add honest details, photos, pricing and availability.</span></li><li><b>Meet your renter</b><span>Review booking requests and coordinate a convenient handoff.</span></li><li><b>Earn with confidence</b><span>Keep control of your calendar and grow your reputation.</span></li></ol><Link className="text-button" to="/list-your-item">List your item <ArrowRight size={15} /></Link></div></div></div></section>; }
 
@@ -67,33 +238,29 @@ export function AuthPage({ mode = 'login' }) { const isLogin = mode === 'login';
 
 // Form to add new rental item with computer file upload
 export function ListItemPage() {
-  // form state variables
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [pricePerDay, setPricePerDay] = useState('');
-  const [imageUrl, setImageUrl] = useState(''); // stores base64 image from computer
+  const [imageUrl, setImageUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // read image file from computer
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
-      // convert image to string format
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result); // base64 string
+        setImageUrl(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // handle submit to backend api
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -104,7 +271,6 @@ export function ListItemPage() {
       location,
       description,
       price_per_day: Number(pricePerDay),
-      // use uploaded photo from pc or fallback
       image_url: imageUrl || 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc',
       contact_number: contactNumber || '0771234567'
     };
@@ -112,9 +278,7 @@ export function ListItemPage() {
     try {
       const response = await fetch('http://localhost:5000/api/v1/items', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem)
       });
       const data = await response.json();
@@ -141,7 +305,7 @@ export function ListItemPage() {
                 <p>Help renters understand exactly what they are booking.</p>
               </div>
             </div>
-            {field('Item name', <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Honda Vezel 2019 or Nikon D750" required />)}
+            {field('Item name', <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Honda Vezel 2019" required />)}
             <div className="two-fields">
               {field('Category', (
                 <select value={category} onChange={(e) => setCategory(e.target.value)} required>
@@ -169,7 +333,6 @@ export function ListItemPage() {
               </div>
             </div>
 
-            {/* Real computer file upload */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label className="upload-box" style={{ cursor: 'pointer', display: 'block', border: '2px dashed #94a3b8', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
                 <ImagePlus size={30} style={{ margin: '0 auto 8px auto', color: '#0f766e' }} />
@@ -178,7 +341,6 @@ export function ListItemPage() {
                 <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
               </label>
 
-              {/* image preview */}
               {imageUrl && (
                 <div style={{ marginTop: '12px', textAlign: 'center' }}>
                   <p style={{ fontSize: '13px', marginBottom: '6px' }}>Photo Preview:</p>
@@ -216,4 +378,140 @@ export function MyBookingsPage() { const [rows, setRows] = useState(bookingRows)
 
 export function MyListingsPage() { return <section className="market-page"><div className="app-container"><PageIntro eyebrow="Your host space" title="My listings" description="Manage availability and keep your listings looking their best." action={<Link className="primary-button" to="/list-your-item">Add new listing <ArrowRight size={16} /></Link>} /><div className="listing-summary"><div><strong>3</strong><span>Active listings</span></div><div><strong>LKR 42,600</strong><span>Earned this month</span></div><div><strong>4.9</strong><span>Average rating</span></div></div><div className="owner-list">{rentalItems.slice(0, 4).map((item) => <article className="owner-list-row" key={item.id}><div className={`booking-thumb ${item.image}`} /><div><span>{item.category}</span><h2>{item.title}</h2><p><MapPin size={14} /> {item.location} · LKR {item.price.toLocaleString()} / day</p></div><span className="status confirmed">Active</span><button type="button" className="icon-button" aria-label={`Edit ${item.title}`}><Wrench size={17} /></button></article>)}</div></div></section>; }
 
-export function AdminDashboardPage() { const [tab, setTab] = useState('Overview'); return <section className="market-page admin-page"><div className="app-container"><PageIntro eyebrow="Operations" title="Admin dashboard" description="A clear view of the RentLanka marketplace." /><div className="admin-tabs">{['Overview', 'Users', 'Listings', 'Bookings'].map((item) => <button className={tab === item ? 'active' : ''} type="button" key={item} onClick={() => setTab(item)}>{item}</button>)}</div>{tab === 'Overview' ? <><div className="admin-stats"><div><span>Total users</span><strong>12,842</strong><small>+8.2% this month</small></div><div><span>Active listings</span><strong>3,248</strong><small>+12.4% this month</small></div><div><span>Bookings this month</span><strong>1,904</strong><small>+5.8% this month</small></div><div><span>Gross volume</span><strong>LKR 8.4M</strong><small>+15.1% this month</small></div></div><div className="admin-panels"><div className="admin-panel"><div className="panel-heading"><h2>Recent bookings</h2><span>View all <ArrowRight size={14} /></span></div>{bookingRows.map((row) => <div className="admin-row" key={row.id}><span className="admin-row-avatar">{row.item.slice(0, 1)}</span><div><strong>{row.item}</strong><small>{row.id} · {row.dates}</small></div><b>{row.total}</b></div>)}</div><div className="admin-panel"><div className="panel-heading"><h2>Marketplace health</h2><span>Live</span></div><div className="health-meter"><span style={{ width: '78%' }} /></div><strong className="health-score">78%</strong><p>Listing quality score</p><div className="health-list"><span><Check size={15} /> 92% profiles verified</span><span><Check size={15} /> 86% listings have 3+ photos</span><span><Check size={15} /> 4.8 average marketplace rating</span></div></div></div></> : <div className="empty-panel"><Users size={28} /><h2>{tab} management</h2><p>Sample moderation tools for the RentLanka operations team are ready for connection to a backend.</p></div>}</div></section>; }
+// Working Admin Dashboard with Confirm / Reject booking flow
+export function AdminDashboardPage() {
+  const [tab, setTab] = useState('Overview');
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // load real bookings from backend
+  const fetchBookings = () => {
+    fetch('http://localhost:5000/api/v1/bookings')
+      .then(res => res.json())
+      .then(result => {
+        if (result.success && result.data) {
+          setBookings(result.data);
+        }
+      })
+      .catch(err => console.log("error fetch bookings", err));
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  // admin confirm or reject booking action
+  const handleStatusChange = async (id, status, itemId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/bookings/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, item_id: itemId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // update local list
+        fetchBookings();
+      }
+    } catch (err) {
+      console.log("error updating status", err);
+    }
+  };
+
+  return (
+    <section className="market-page admin-page">
+      <div className="app-container">
+        <PageIntro eyebrow="Operations" title="Admin & Host Dashboard" description="Manage rental bookings, approve customer requests, and monitor marketplace status." />
+        <div className="admin-tabs">
+          {['Overview', 'Bookings', 'Listings'].map((item) => (
+            <button className={tab === item ? 'active' : ''} type="button" key={item} onClick={() => setTab(item)}>
+              {item}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'Overview' || tab === 'Bookings' ? (
+          <>
+            <div className="admin-stats">
+              <div><span>Total Bookings</span><strong>{bookings.length}</strong><small>Live records</small></div>
+              <div><span>Pending Requests</span><strong>{bookings.filter(b => b.status === 'Pending').length}</strong><small>Needs approval</small></div>
+              <div><span>Confirmed Bookings</span><strong>{bookings.filter(b => b.status === 'Confirmed').length}</strong><small>Ready for pickup</small></div>
+              <div><span>Marketplace Health</span><strong>98%</strong><small>Verified hosts</small></div>
+            </div>
+
+            <div className="admin-panels">
+              <div className="admin-panel" style={{ flex: 2 }}>
+                <div className="panel-heading">
+                  <h2>Rental Booking Requests (Approve / Reject)</h2>
+                  <span>Live data</span>
+                </div>
+
+                {bookings.length === 0 ? (
+                  <p style={{ padding: '1rem', color: '#64748b' }}>No booking requests yet. Customers can request from the item details page.</p>
+                ) : (
+                  bookings.map((row) => (
+                    <div className="admin-row" key={row.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid #e2e8f0' }}>
+                      <div>
+                        <strong>{row.item_title}</strong>
+                        <p style={{ margin: '2px 0', fontSize: '13px', color: '#64748b' }}>
+                          Renter: <b>{row.renter_name}</b> ({row.renter_phone})
+                        </p>
+                        <small style={{ color: '#0f766e' }}>{row.start_date} to {row.end_date} · Total: LKR {Number(row.total_price).toLocaleString()}</small>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          backgroundColor: row.status === 'Confirmed' ? '#dcfce7' : row.status === 'Rejected' ? '#fee2e2' : '#fef9c3',
+                          color: row.status === 'Confirmed' ? '#166534' : row.status === 'Rejected' ? '#991b1b' : '#854d0e'
+                        }}>
+                          {row.status}
+                        </span>
+
+                        {row.status === 'Pending' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(row.id, 'Confirmed', row.item_id)}
+                              style={{ backgroundColor: '#0f766e', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(row.id, 'Rejected', row.item_id)}
+                              style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="admin-panel" style={{ flex: 1 }}>
+                <div className="panel-heading"><h2>System Condition Report</h2></div>
+                <div className="health-meter"><span style={{ width: '92%' }} /></div>
+                <strong className="health-score">92%</strong>
+                <p>Inspection & safety score</p>
+                <div className="health-list">
+                  <span><Check size={15} /> All hosts phone-verified</span>
+                  <span><Check size={15} /> Vehicle condition reports active</span>
+                  <span><Check size={15} /> Refundable deposit policy applied</span>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="empty-panel"><Users size={28} /><h2>Listings Management</h2><p>View all active listings and host verification status.</p></div>
+        )}
+      </div>
+    </section>
+  );
+}

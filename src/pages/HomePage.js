@@ -202,9 +202,9 @@ function App() {
                     <div className="rental-footer">
                       <p><strong>LKR {rental.price_per_day}</strong> <span>/ day</span></p>
                       <span className="review-count">({rental.reviews || '12'} reviews)</span>
-                      <button type="button" className="details-link" onClick={() => setSearchMessage(`${rental.title} is available in ${rental.location}. Contact: ${rental.contact_number || 'N/A'}`)}>
+                      <Link to={`/rentals/${rental.id}`} className="details-link">
                         View details <ChevronRight size={14} />
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </article>
