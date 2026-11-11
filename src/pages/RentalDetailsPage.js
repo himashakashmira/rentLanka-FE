@@ -23,7 +23,7 @@ export default function RentalDetailsPage() {
     // fetch item details from backend
     useEffect(() => {
         // get all items first to make sure item is found
-        fetch('http://localhost:5000/api/v1/items')
+        fetch('https://rent-lanka-be.vercel.app/api/v1/items')
             .then((res) => res.json())
             .then((result) => {
                 if (result.success && result.data) {
@@ -57,7 +57,7 @@ export default function RentalDetailsPage() {
         };
 
         try {
-            const res = await fetch('http://localhost:5000/api/v1/bookings', {
+            const res = await fetch('https://rent-lanka-be.vercel.app/api/v1/bookings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingPayload)

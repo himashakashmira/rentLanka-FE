@@ -16,7 +16,7 @@ export function ExplorePage() {
   const [liveItems, setLiveItems] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/items')
+    fetch('https://rent-lanka-be.vercel.app/api/v1/items')
       .then((res) => res.json())
       .then((result) => {
         if (result.success && result.data && result.data.length > 0) {
@@ -73,7 +73,7 @@ export function RentalDetailsPage() {
 
   // fetch single item details from backend
   useEffect(() => {
-    fetch(`http://localhost:5000/api/v1/items/${id}`)
+    fetch(`https://rent-lanka-be.vercel.app/api/v1/items/${id}`)
       .then((res) => res.json())
       .then((result) => {
         if (result.success && result.data) {
@@ -103,7 +103,7 @@ export function RentalDetailsPage() {
     };
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/bookings', {
+      const res = await fetch('https://rent-lanka-be.vercel.app/api/v1/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)

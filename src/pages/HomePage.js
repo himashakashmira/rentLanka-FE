@@ -75,7 +75,7 @@ function App() {
 
   // call api on page load
   useEffect(() => {
-    fetch('http://localhost:5000/api/v1/items')
+    fetch('https://rent-lanka-be.vercel.app/api/v1/items')
       .then((res) => res.json())
       .then((result) => {
         if (result.success && result.data && result.data.length > 0) {
