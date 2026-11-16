@@ -1,0 +1,153 @@
+/* ==========================================================================
+   RentLanka Micro-Interactions & Motion Design System
+   ========================================================================== */
+
+/* 1. Pulse Rings & Glowing Availability Indicators */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 105, 72, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 105, 72, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 105, 72, 0);
+  }
+}
+
+@keyframes pulseGlowMint {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.pulse-ring-emerald {
+  animation: pulseGlow 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.pulse-ring-mint {
+  animation: pulseGlowMint 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* 2. Floating Proof Cards Gentle Bobbing */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 6s ease-in-out infinite;
+}
+
+/* 3. Shimmer Skeleton Loading */
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(229, 238, 255, 0.6) 25%,
+    rgba(255, 255, 255, 0.9) 37%,
+    rgba(229, 238, 255, 0.6) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmerWave 1.4s ease infinite;
+}
+
+/* 4. Modal Backdrop Blur Fade & Zoom In */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-enter {
+  animation: modalEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 5. Smooth Elevation Hover on Cards */
+.card-hover-lift {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px -6px rgba(0, 105, 72, 0.14), 0 6px 16px -2px rgba(11, 28, 48, 0.05);
+}
+
+/* 6. Tactile Button Micro-Press */
+.btn-press {
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* 7. Live Stream Radar Beacon */
+@keyframes radarSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar {
+  animation: radarSpin 8s linear infinite;
+}
+
+/* 8. Glowing AI Sparkle Gradient */
+@keyframes aiGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ai-sparkle-btn {
+  background: linear-gradient(135deg, #006948, #00855d, #059669, #10b981);
+  background-size: 200% 200%;
+  animation: aiGradientShift 4s ease infinite;
+}
+

@@ -1,1 +1,0 @@
-export default function PageIntro({ eyebrow, title, description, action }) { return <div className="page-intro"><div><p className="eyebrow"><span className="eyebrow-dot" /> {eyebrow}</p><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>; }
