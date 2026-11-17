@@ -12,7 +12,7 @@ export interface SearchableCitySelectProps {
   error?: string;
   id?: string;
   className?: string;
-  variant?: "default" | "hero" | "filter";
+  variant?: "default" | "hero" | "filter" | "darkHero";
   helperText?: string;
 }
 
@@ -143,10 +143,11 @@ export const SearchableCitySelect: React.FC<SearchableCitySelectProps> = ({
       {/* ========================================================================= */}
 
       {/* 1. HERO VARIANT (HomePage Hero Glassmorphic Search Bar) */}
-      {variant === "hero" && (
+      {variant === "hero" || variant === "darkHero" ? (
         <div
           role="button"
           tabIndex={0}
+          id={id}
           onClick={() => setIsOpen((prev) => !prev)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -156,28 +157,48 @@ export const SearchableCitySelect: React.FC<SearchableCitySelectProps> = ({
           }}
           className="w-full flex items-center gap-3 text-left cursor-pointer select-none group"
         >
-          <span className="material-symbols-outlined text-primary text-[22px] group-hover:scale-110 transition-transform shrink-0">
+          <span
+            className={`material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform shrink-0 ${
+              variant === "darkHero" ? "text-emerald-400" : "text-primary"
+            }`}
+          >
             pin_drop
           </span>
           <div className="w-full min-w-0 pr-1">
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+            <span
+              className={`block text-[10px] font-bold uppercase tracking-wider ${
+                variant === "darkHero" ? "text-emerald-200/80" : "text-on-surface-variant"
+              }`}
+            >
               Pickup Hub
             </span>
             <div className="flex items-center justify-between gap-1">
               <span
                 className={`truncate font-headline text-xs sm:text-sm font-bold ${
-                  displayValue ? "text-on-surface" : "text-slate-400"
+                  variant === "darkHero"
+                    ? displayValue
+                      ? "text-white"
+                      : "text-emerald-100/60"
+                    : displayValue
+                    ? "text-on-surface"
+                    : "text-slate-400"
                 }`}
               >
                 {displayValue || placeholder}
               </span>
-              <span className="material-symbols-outlined text-on-surface-variant text-[18px] shrink-0 group-hover:text-primary transition-colors">
+              <span
+                className={`material-symbols-outlined text-[18px] shrink-0 transition-colors ${
+                  variant === "darkHero"
+                    ? "text-emerald-300 group-hover:text-emerald-100"
+                    : "text-on-surface-variant group-hover:text-primary"
+                }`}
+              >
                 {isOpen ? "expand_less" : "expand_more"}
               </span>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* 2. FILTER VARIANT (ExplorePage Filter Bar) */}
       {variant === "filter" && (

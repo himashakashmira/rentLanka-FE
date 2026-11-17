@@ -57,6 +57,7 @@ export interface Booking {
   item_image?: string;
   item_location?: string;
   renter_name: string;
+  renter_email?: string;
   renter_phone: string;
   renter_nic: string;
   start_date: string;

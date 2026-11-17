@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Item, Booking } from "../../types";
 import { bookingsApi } from "../../services/api";
+import { useAppSelector } from "../../app/store";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface PaymentModalProps {
     renterName: string;
     renterPhone: string;
     renterNic: string;
+    renterEmail?: string;
   };
   onBookingSuccess: (booking: Booking) => void;
 }
@@ -29,6 +31,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   rentalData,
   onBookingSuccess,
 }) => {
+  const currentUser = useAppSelector((state) => state.auth.user);
   const [activeTab, setActiveTab] = useState<"card" | "lankaqr">("card");
   const [processingState, setProcessingState] = useState<
     "idle" | "connecting" | "locking_escrow" | "success"
@@ -59,6 +62,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           item_image: item.image_url,
           item_location: item.location,
           renter_name: rentalData.renterName,
+          renter_email: rentalData.renterEmail || currentUser?.email || "customer@rentlanka.lk",
           renter_phone: rentalData.renterPhone,
           renter_nic: rentalData.renterNic,
           start_date: rentalData.startDate,

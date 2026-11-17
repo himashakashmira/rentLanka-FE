@@ -7,7 +7,9 @@ import ExplorePage from "./pages/ExplorePage";
 import RentalDetailsPage from "./pages/RentalDetailsPage";
 import ListItemPage from "./pages/ListItemPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import HostDashboardPage from "./pages/HostDashboardPage";
 import AuthPage from "./pages/AuthPage";
+import ChatBot from "./components/ui/ChatBot";
 
 export const App: React.FC = () => {
   return (
@@ -22,6 +24,8 @@ export const App: React.FC = () => {
             <Route path="/how-it-works" element={<HomePage />} />
             <Route path="/rentals/:id" element={<RentalDetailsPage />} />
             <Route path="/list-your-item" element={<ListItemPage />} />
+            <Route path="/host-dashboard" element={<HostDashboardPage />} />
+            <Route path="/my-listings" element={<HostDashboardPage initialTab="inventory" />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/login" element={<AuthPage initialMode="login" />} />
             <Route path="/register" element={<AuthPage initialMode="register" />} />
@@ -29,6 +33,7 @@ export const App: React.FC = () => {
           </Routes>
         </main>
         <Footer />
+        <ChatBot />
       </div>
     </BrowserRouter>
   );

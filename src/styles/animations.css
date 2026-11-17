@@ -151,3 +151,84 @@
   animation: aiGradientShift 4s ease infinite;
 }
 
+/* 10. RentLanka Bespoke Animated Grid Mesh & Pulse Glow */
+@keyframes grid-flow {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(35px, -20px) scale(1.15);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate(-25px, 25px) scale(0.92);
+    opacity: 0.35;
+  }
+}
+
+.animate-grid-flow {
+  animation: grid-flow 20s linear infinite;
+  will-change: transform;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 10s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.animate-pulse-glow-reverse {
+  animation: pulse-glow 12s ease-in-out infinite alternate-reverse;
+  will-change: transform, opacity;
+}
+
+@keyframes heroGlowPulse1 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.20;
+  }
+  50% {
+    transform: translate(35px, 25px) scale(1.08);
+    opacity: 0.28;
+  }
+  100% {
+    transform: translate(-25px, 45px) scale(0.96);
+    opacity: 0.20;
+  }
+}
+
+@keyframes heroGlowPulse2 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translate(-35px, -25px) scale(1.10);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate(30px, -40px) scale(0.94);
+    opacity: 0.15;
+  }
+}
+
+.animate-hero-blob-1 {
+  animation: heroGlowPulse1 8s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.animate-hero-blob-2 {
+  animation: heroGlowPulse2 10s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+

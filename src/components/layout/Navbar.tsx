@@ -124,11 +124,24 @@ export const Navbar: React.FC = () => {
                     </span>
                   </div>
 
+                  {user.role === "host" && (
+                    <Link
+                      to="/host-dashboard"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low font-semibold transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-primary">
+                        monitoring
+                      </span>
+                      Host Dashboard &amp; Earnings
+                    </Link>
+                  )}
+
                   {user.role === "admin" && (
                     <Link
                       to="/admin"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low font-medium"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low font-semibold transition-colors"
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary">
                         dashboard
@@ -140,7 +153,7 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/list-your-item"
                     onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low font-medium"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low font-semibold transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px] text-primary">
                       add_business
@@ -243,16 +256,38 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
-              className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-error hover:bg-error-container/20 pt-2 border-t border-surface-container"
-            >
-              <span className="material-symbols-outlined text-[20px]">logout</span>
-              Sign Out
-            </button>
+            <div className="pt-2 border-t border-surface-container space-y-1">
+              {user?.role === "host" && (
+                <Link
+                  to="/host-dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl font-headline font-semibold text-xs text-on-surface hover:bg-surface-container-low"
+                >
+                  <span className="material-symbols-outlined text-primary text-[18px]">monitoring</span>
+                  Host Dashboard &amp; Earnings
+                </Link>
+              )}
+              {user?.role === "admin" && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl font-headline font-semibold text-xs text-on-surface hover:bg-surface-container-low"
+                >
+                  <span className="material-symbols-outlined text-primary text-[18px]">dashboard</span>
+                  Admin Operations
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-error hover:bg-error-container/20 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[20px]">logout</span>
+                Sign Out
+              </button>
+            </div>
           )}
         </div>
       )}

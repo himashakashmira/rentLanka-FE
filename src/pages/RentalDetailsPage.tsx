@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Item, Booking } from "../types";
-import { itemsApi } from "../services/api";
+import { itemsApi, bookingsApi } from "../services/api";
 import PaymentModal from "../components/ui/PaymentModal";
 import { useAppSelector } from "../app/store";
 
@@ -10,11 +10,12 @@ export const RentalDetailsPage: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [item, setItem] = useState<Item | null>(null);
+  const [itemBookings, setItemBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Gallery state
-  const [selectedPhoto, setSelectedPhoto] = useState<string>("");
+  const [activeIndex, setActiveIndex] = useState<number>(0);
 
   // Delivery option
   const [deliveryMode, setDeliveryMode] = useState<"pickup" | "door">("pickup");
@@ -41,21 +42,50 @@ export const RentalDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    const fetchItem = async () => {
+    const fetchItemAndBookings = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await itemsApi.getById(id);
+        const [data, allBookings] = await Promise.all([
+          itemsApi.getById(id),
+          bookingsApi.getAll(),
+        ]);
         setItem(data);
-        setSelectedPhoto(data.image_url);
+        setActiveIndex(0);
+
+        // Filter confirmed bookings for this specific item
+        const confirmedForThisItem = (allBookings || []).filter((b) => {
+          const bItemId =
+            typeof b.item_id === "object"
+              ? b.item_id?._id || (b.item_id as any)?.id
+              : b.item_id;
+          return (bItemId === id || b.item_title === data.title) && b.status === "Confirmed";
+        });
+        setItemBookings(confirmedForThisItem);
       } catch (err: any) {
         setError(err.message || "Failed to load rental item details");
       } finally {
         setLoading(false);
       }
     };
-    fetchItem();
+    fetchItemAndBookings();
   }, [id]);
+
+  // Date Overlap Validation Logic
+  const isDateOverlap = (startA: string, endA: string, startB: string, endB: string): boolean => {
+    const aStart = new Date(startA).getTime();
+    const aEnd = new Date(endA).getTime();
+    const bStart = new Date(startB).getTime();
+    const bEnd = new Date(endB).getTime();
+    return aStart <= bEnd && aEnd >= bStart;
+  };
+
+  const conflictingBooking = useMemo(() => {
+    if (!startDate || !endDate || itemBookings.length === 0) return null;
+    return itemBookings.find((b) =>
+      isDateOverlap(startDate, endDate, b.start_date, b.end_date)
+    );
+  }, [itemBookings, startDate, endDate]);
 
   // Restore booking intent if user was redirected back after login/register
   useEffect(() => {
@@ -96,6 +126,7 @@ export const RentalDetailsPage: React.FC = () => {
           endDate,
           deliveryMode,
           renterName,
+          renterEmail: user?.email,
           renterPhone,
           renterNic,
           emergencyContact,
@@ -107,6 +138,12 @@ export const RentalDetailsPage: React.FC = () => {
   };
 
   const handleRequestToBook = () => {
+    if (conflictingBooking) {
+      alert(
+        `⚠️ Selected dates are unavailable! This item is already booked from ${conflictingBooking.start_date} to ${conflictingBooking.end_date}. Please choose another date window.`
+      );
+      return;
+    }
     if (!isAuthenticated || !user) {
       saveBookingIntentToSession();
       setShowAuthBookingModal(true);
@@ -180,6 +217,7 @@ export const RentalDetailsPage: React.FC = () => {
 
   const handleBookingSuccess = (booking: Booking) => {
     setBookingConfirmed(booking);
+    setItemBookings((prev) => [...prev, booking]);
     if (item) {
       setItem({ ...item, is_available: false });
     }
@@ -220,16 +258,11 @@ export const RentalDetailsPage: React.FC = () => {
     );
   }
 
-  // Gallery photos (use real uploaded images array, or fallback to primary image)
-  const galleryList =
+  // Extract all available images (matching Ikman.lk / Airbnb interactive carousel)
+  const images: string[] =
     item.images && item.images.length > 0
       ? item.images
-      : [
-          item.image_url,
-          "https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&w=600&q=80",
-          "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
-          "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80",
-        ];
+      : [item.image_url || "https://images.unsplash.com/photo-1549399542-7e3f8b79c341"];
 
   return (
     <div className="min-h-screen bg-surface pt-24 pb-20">
@@ -280,40 +313,96 @@ export const RentalDetailsPage: React.FC = () => {
           </h1>
         </div>
 
-        {/* Bento Gallery Showcase */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-8 rounded-3xl overflow-hidden bg-surface-container aspect-[16/10] relative shadow-card">
+        {/* ========================================================================= */}
+        {/* RE-BALANCED BENTO GALLERY (MAIN STAGE LEFT, VERTICAL THUMBNAILS RIGHT) */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-auto md:h-[380px] lg:h-[420px] w-full mb-8">
+          {/* LEFT SIDE: MAIN STAGE IMAGE (~75% width on desktop) */}
+          <div
+            className={`${
+              images.length > 1 ? "md:col-span-9" : "md:col-span-12"
+            } relative h-[290px] sm:h-[360px] md:h-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/80 shadow-md group`}
+          >
+            {/* Main Photo */}
             <img
-              src={selectedPhoto || item.image_url}
-              alt={item.title}
+              src={images[activeIndex] || item.image_url}
+              alt={`${item.title} - Photo ${activeIndex + 1}`}
               className="w-full h-full object-cover transition-all duration-300"
             />
-            <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold font-headline bg-white/90 backdrop-blur-md text-on-surface shadow-xs">
+
+            {/* Item Category Badge (Top-Left Overlay) */}
+            <span className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-[#006948] font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm z-10 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#006948]" />
               {item.category}
             </span>
+
+            {/* Photo Counter Badge (Bottom-Right Overlay) */}
+            <div className="absolute bottom-4 right-4 bg-slate-950/75 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md z-10 select-none">
+              <span>📷</span>
+              <span>
+                {activeIndex + 1} / {images.length}
+              </span>
+            </div>
+
+            {/* Navigation Arrows (Overlay, shown when images.length > 1) */}
+            {images.length > 1 && (
+              <>
+                {/* Left Arrow (<) */}
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-xl backdrop-blur-md flex items-center justify-center transition active:scale-90 z-20 focus:outline-none cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[24px] leading-none select-none">
+                    chevron_left
+                  </span>
+                </button>
+
+                {/* Right Arrow (>) */}
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-xl backdrop-blur-md flex items-center justify-center transition active:scale-90 z-20 focus:outline-none cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[24px] leading-none select-none">
+                    chevron_right
+                  </span>
+                </button>
+              </>
+            )}
           </div>
 
-          <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-3">
-            {galleryList.slice(0, 4).map((thumb, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setSelectedPhoto(thumb)}
-                className={`relative rounded-2xl overflow-hidden aspect-[16/9] lg:aspect-auto lg:h-[86px] w-full border-2 transition-all group focus:outline-none cursor-pointer ${
-                  selectedPhoto === thumb
-                    ? "border-primary ring-2 ring-primary/30"
-                    : "border-transparent opacity-75 hover:opacity-100"
-                }`}
-              >
-                <img
-                  src={thumb}
-                  alt={`View ${idx + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-              </button>
-            ))}
-          </div>
+          {/* RIGHT SIDE: VERTICAL THUMBNAIL SELECTOR (~25% width on desktop) */}
+          {images.length > 1 && (
+            <div className="md:col-span-3 flex flex-row md:flex-col gap-3 h-auto md:h-full overflow-x-auto md:overflow-y-auto pr-0 md:pr-1 pb-2 md:pb-0 scrollbar-thin">
+              {images.map((thumb, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  className={`h-[80px] w-[80px] sm:w-[95px] md:w-full md:h-[90px] lg:h-[105px] rounded-xl overflow-hidden relative cursor-pointer border-2 transition-all shrink-0 focus:outline-none ${
+                    activeIndex === index
+                      ? "border-[#006948] ring-2 ring-[#006948]/30 shadow-md scale-[1.02] opacity-100"
+                      : "border-transparent opacity-60 hover:opacity-90"
+                  }`}
+                >
+                  <img
+                    src={thumb}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 2-Column Split: Dynamic Specs on Left, Calculator on Right */}
@@ -758,6 +847,30 @@ export const RentalDetailsPage: React.FC = () => {
                 <span className="text-amber-500 font-bold text-xs">★ 4.98 (Verified)</span>
               </div>
 
+              {/* Visual Availability Notice (If item has confirmed reserved dates) */}
+              {itemBookings.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-xs space-y-1.5 animate-in fade-in">
+                  <div className="flex items-center gap-1.5 font-headline font-bold text-amber-950">
+                    <span className="material-symbols-outlined text-[18px] text-amber-700">calendar_clock</span>
+                    <span>Reserved Dates for this Asset</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-tight">
+                    This asset has confirmed reservations on the following dates:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {itemBookings.map((b, idx) => (
+                      <span
+                        key={b._id || idx}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/90 text-amber-950 font-bold text-[11px] border border-amber-300"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">event_busy</span>
+                        <span>{b.start_date} to {b.end_date}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Interactive Pick-up & Return Date Pickers */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-on-surface">
@@ -785,6 +898,24 @@ export const RentalDetailsPage: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {/* Real-time Date Conflict Alert */}
+                {conflictingBooking && (
+                  <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-950 flex items-start gap-2.5 animate-in fade-in">
+                    <span className="material-symbols-outlined text-[20px] text-red-600 shrink-0 mt-0.5">
+                      warning
+                    </span>
+                    <div>
+                      <p className="font-headline font-bold text-red-900">
+                        Selected dates are unavailable!
+                      </p>
+                      <p className="text-[11px] text-red-700 mt-0.5 leading-relaxed">
+                        This item is already booked from <strong>{conflictingBooking.start_date}</strong> to{" "}
+                        <strong>{conflictingBooking.end_date}</strong>. Please choose another date window.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* DYNAMIC DELIVERY OPTION: VEHICLES LOCKED TO PICKUP */}
@@ -808,11 +939,10 @@ export const RentalDetailsPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <label
                     onClick={() => setDeliveryMode("pickup")}
-                    className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                      deliveryMode === "pickup"
+                    className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${deliveryMode === "pickup"
                         ? "border-primary bg-primary-fixed/20 text-on-surface font-bold"
                         : "border-surface-container text-on-surface-variant hover:bg-surface-container-low"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -826,11 +956,10 @@ export const RentalDetailsPage: React.FC = () => {
 
                   <label
                     onClick={() => setDeliveryMode("door")}
-                    className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                      deliveryMode === "door"
+                    className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${deliveryMode === "door"
                         ? "border-primary bg-primary-fixed/20 text-on-surface font-bold"
                         : "border-surface-container text-on-surface-variant hover:bg-surface-container-low"
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -960,13 +1089,20 @@ export const RentalDetailsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleRequestToBook}
-                disabled={!item.is_available}
-                className="w-full py-4 rounded-2xl bg-primary text-white font-headline font-bold text-sm shadow-[0_4px_16px_rgba(0,105,72,0.35)] hover:bg-primary-container active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!item.is_available || !!conflictingBooking}
+                className={`w-full py-4 rounded-2xl font-headline font-bold text-sm shadow-[0_4px_16px_rgba(0,105,72,0.35)] transition-all flex items-center justify-center gap-2 ${conflictingBooking
+                    ? "bg-slate-300 text-slate-600 cursor-not-allowed opacity-80"
+                    : "bg-primary text-white hover:bg-primary-container active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  }`}
               >
-                <span className="material-symbols-outlined text-[18px]">lock</span>
-                {item.is_available
-                  ? "Request to Book & Proceed to Checkout"
-                  : "Currently Out on Rent"}
+                <span className="material-symbols-outlined text-[18px]">
+                  {conflictingBooking ? "event_busy" : "lock"}
+                </span>
+                {conflictingBooking
+                  ? "Selected Dates Unavailable"
+                  : item.is_available
+                    ? "Request to Book & Proceed to Checkout"
+                    : "Currently Out on Rent"}
               </button>
 
               <div className="flex items-center justify-between text-[10px] text-on-surface-variant pt-1">
@@ -991,10 +1127,10 @@ export const RentalDetailsPage: React.FC = () => {
                 {isVehicleOrMoto
                   ? "Popular Vehicle Touring Add-Ons"
                   : isCamera
-                  ? "Complete Your Film Production Rig"
-                  : isTool
-                  ? "Recommended Jobsite Power & Safety Gear"
-                  : "Complementary Event & Production Gear"}
+                    ? "Complete Your Film Production Rig"
+                    : isTool
+                      ? "Recommended Jobsite Power & Safety Gear"
+                      : "Complementary Event & Production Gear"}
               </h3>
             </div>
             <Link
@@ -1008,27 +1144,27 @@ export const RentalDetailsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {(isVehicleOrMoto
               ? [
-                  {
-                    title: "Dual 4K Dashcam with GPS & Parking Guard",
-                    price: 2500,
-                    desc: "Sony Starvis 2 night vision sensor, front and rear cabin recording with 128GB high-endurance SD.",
-                    img: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80",
-                  },
-                  {
-                    title: "Garmin DriveSmart 66 GPS Navigator",
-                    price: 1800,
-                    desc: "Detailed Sri Lankan offline road map with voice guidance, speed trap alerts, and scenic routes.",
-                    img: "https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=400&q=80",
-                  },
-                  {
-                    title: "Child Safety Seat (ISOFIX Certified)",
-                    price: 1500,
-                    desc: "360-degree rotation, 5-point harness safety for infants up to 12 years with breathable comfort padding.",
-                    img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=400&q=80",
-                  },
-                ]
+                {
+                  title: "Dual 4K Dashcam with GPS & Parking Guard",
+                  price: 2500,
+                  desc: "Sony Starvis 2 night vision sensor, front and rear cabin recording with 128GB high-endurance SD.",
+                  img: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80",
+                },
+                {
+                  title: "Garmin DriveSmart 66 GPS Navigator",
+                  price: 1800,
+                  desc: "Detailed Sri Lankan offline road map with voice guidance, speed trap alerts, and scenic routes.",
+                  img: "https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=400&q=80",
+                },
+                {
+                  title: "Child Safety Seat (ISOFIX Certified)",
+                  price: 1500,
+                  desc: "360-degree rotation, 5-point harness safety for infants up to 12 years with breathable comfort padding.",
+                  img: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=400&q=80",
+                },
+              ]
               : isCamera
-              ? [
+                ? [
                   {
                     title: "DJI RS 3 Pro Gimbal Combo",
                     price: 6500,
@@ -1048,7 +1184,7 @@ export const RentalDetailsPage: React.FC = () => {
                     img: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=400&q=80",
                   },
                 ]
-              : [
+                : [
                   {
                     title: "50m Heavy-Duty 3-Phase Extension Loom",
                     price: 4500,
@@ -1122,6 +1258,7 @@ export const RentalDetailsPage: React.FC = () => {
           platformFee: calculations.platformFee,
           totalPayable: calculations.totalPayable,
           renterName,
+          renterEmail: user?.email,
           renterPhone,
           renterNic,
         }}

@@ -226,6 +226,17 @@ export const aiApi = {
     if (!res.ok) throw new Error(data.message || "AI generation failed");
     return { description: data.description, source: data.source };
   },
+
+  chat: async (message: string): Promise<string> => {
+    const res = await fetch(`${API_BASE_URL}/ai/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to reach RentLanka AI");
+    return data.reply;
+  },
 };
 
 // ============ UPLOAD API ============
