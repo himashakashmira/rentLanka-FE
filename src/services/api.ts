@@ -53,6 +53,34 @@ export const authApi = {
     if (!res.ok) throw new Error(data.message || "Unauthorized");
     return data.user;
   },
+
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to process forgot password request");
+    return data;
+  },
+};
+
+// ============ USERS API ============
+export const usersApi = {
+  getAll: async (): Promise<User[]> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/users`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load users");
+      return data.users || [];
+    } catch (err: any) {
+      console.warn("Failed to fetch users list:", err.message);
+      return [];
+    }
+  },
 };
 
 // ============ ITEMS API ============
@@ -199,4 +227,22 @@ export const aiApi = {
     return { description: data.description, source: data.source };
   },
 };
+
+// ============ UPLOAD API ============
+export const uploadApi = {
+  uploadImage: async (file: File): Promise<{ success: boolean; imageUrl: string; path?: string }> => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${API_BASE_URL}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Upload failed");
+    }
+    return data;
+  },
+};
+
 

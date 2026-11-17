@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Item, Category } from "../types";
 import { itemsApi, categoriesApi } from "../services/api";
 import RentalCard from "../components/ui/RentalCard";
+import { SearchableCitySelect } from "../components/common/SearchableCitySelect";
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -84,11 +85,6 @@ export const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-8">
             {/* Headline and Tagline */}
             <div className="lg:col-span-8 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed/40 border border-primary-fixed text-on-primary-fixed text-[11px] font-bold font-headline uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                LIVE PROTOCOL V2.2 • DRP NIC-VERIFIED SRI LANKA ESCROW
-              </div>
-
               <h1 className="font-headline text-3xl sm:text-5xl lg:text-6xl font-extrabold text-on-surface tracking-tight leading-[1.12]">
                 Rent Anything. <br />
                 <span className="text-primary underline decoration-primary-fixed decoration-4 underline-offset-8">
@@ -141,29 +137,15 @@ export const HomePage: React.FC = () => {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center"
             >
               {/* Pickup Hub */}
-              <div className="lg:col-span-3 bg-surface-container-low hover:bg-surface-container transition-colors rounded-2xl px-4 py-3 flex items-center gap-3 border border-surface-container">
-                <span className="material-symbols-outlined text-primary text-[22px]">pin_drop</span>
-                <div className="w-full min-w-0">
-                  <label
-                    htmlFor="search-location"
-                    className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"
-                  >
-                    Pickup Hub
-                  </label>
-                  <select
-                    id="search-location"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                    className="w-full bg-transparent font-headline text-xs sm:text-sm font-bold text-on-surface focus:outline-none cursor-pointer"
-                  >
-                    <option value="colombo">Colombo (Western Hub)</option>
-                    <option value="kandy">Kandy (Central Province)</option>
-                    <option value="galle">Galle (Southern Coast)</option>
-                    <option value="negombo">Negombo (Airport Corridor)</option>
-                    <option value="jaffna">Jaffna (Northern Hub)</option>
-                    <option value="all">All Sri Lanka</option>
-                  </select>
-                </div>
+              <div className="lg:col-span-3 bg-surface-container-low hover:bg-surface-container transition-colors rounded-2xl px-4 py-3 border border-surface-container">
+                <SearchableCitySelect
+                  variant="hero"
+                  value={searchLocation}
+                  onChange={(city) => setSearchLocation(city)}
+                  allowAll
+                  allLabel="All Sri Lanka"
+                  placeholder="Select pickup city"
+                />
               </div>
 
               {/* Rental Type */}
@@ -262,7 +244,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 2. EXPLORE BY SRI LANKAN EQUIPMENT CATEGORY (8 CURATED CARDS) */}
-      <section className="py-14 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="categories" className="py-14 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-8 gap-4">
           <div>
             <h2 className="font-headline text-2xl sm:text-3xl font-extrabold text-on-surface">
@@ -481,7 +463,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 6. HOW RENTING ON RENTLANKA WORKS (3 NUMBERED STEPS) */}
-      <section className="py-16 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="py-16 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-[10px] font-bold font-headline uppercase tracking-wider text-primary">
             Quick 3-Step Handshake Protocol

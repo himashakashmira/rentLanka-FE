@@ -20,9 +20,11 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-surface-container-high/70 shadow-[0_1px_8px_rgba(0,0,0,0.03)] transition-all">
+    <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-surface-container-high/70 shadow-[0_1px_8px_rgba(0,0,0,0.03)] transition-all">
       <div className="h-20 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-        {/* Left: Brand Logo & Location Hub Pill */}
+        {/* ========================================================================= */}
+        {/* LEFT: BRAND LOGO */}
+        {/* ========================================================================= */}
         <div className="flex items-center gap-4 shrink-0">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-[0_4px_14px_rgba(0,105,72,0.3)] group-hover:scale-105 transition-transform">
@@ -32,20 +34,15 @@ export const Navbar: React.FC = () => {
               Rent<span className="text-primary">Lanka</span>
             </span>
           </Link>
-
-          {/* Location Hub Indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low border border-surface-container text-xs font-semibold text-on-surface">
-            <span className="material-symbols-outlined text-[16px] text-primary">location_on</span>
-            <span>Colombo, LK</span>
-            <span className="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer">arrow_drop_down</span>
-          </div>
         </div>
 
-        {/* Center: Desktop Navigation Links */}
+        {/* ========================================================================= */}
+        {/* CENTER: CLEAN NAVIGATION LINKS ONLY (Explore Rentals | Categories | How It Works) */}
+        {/* ========================================================================= */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           <Link
             to="/explore"
-            className={`px-3 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors flex items-center gap-1.5 ${
               isActive("/explore")
                 ? "bg-primary text-white shadow-xs"
                 : "text-on-surface hover:text-primary hover:bg-surface-container-low"
@@ -55,60 +52,48 @@ export const Navbar: React.FC = () => {
           </Link>
 
           <Link
-            to="/explore"
-            className="px-3 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold text-on-surface hover:text-primary hover:bg-surface-container-low transition-colors"
+            to="/categories"
+            className={`px-3.5 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors ${
+              isActive("/categories")
+                ? "bg-primary text-white shadow-xs"
+                : "text-on-surface hover:text-primary hover:bg-surface-container-low"
+            }`}
           >
             Categories
           </Link>
 
           <Link
-            to="/list-your-item"
-            className={`px-3 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors ${
-              isActive("/list-your-item")
-                ? "bg-primary-fixed text-on-primary-fixed"
+            to="/how-it-works"
+            className={`px-3.5 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors ${
+              isActive("/how-it-works")
+                ? "bg-primary text-white shadow-xs"
                 : "text-on-surface hover:text-primary hover:bg-surface-container-low"
             }`}
           >
-            Host Assets
-          </Link>
-
-          <Link
-            to="/explore?category=Cameras"
-            className="px-3 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold text-on-surface hover:text-primary hover:bg-surface-container-low transition-colors"
-          >
-            Production
-          </Link>
-
-          <Link
-            to="/admin"
-            className={`px-3 py-2 rounded-xl font-headline text-xs lg:text-sm font-semibold transition-colors flex items-center gap-1.5 ${
-              isActive("/admin")
-                ? "bg-secondary-container text-on-secondary-fixed"
-                : "text-on-surface hover:text-on-surface hover:bg-surface-container-low"
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">dashboard</span>
-            Operations Hub
+            How It Works
           </Link>
         </nav>
 
-        {/* Right: Actions & User Dropdown */}
+        {/* ========================================================================= */}
+        {/* RIGHT: + LIST YOUR ITEM (EMERALD) | LOG IN | REGISTER (OR USER DROPDOWN) */}
+        {/* ========================================================================= */}
         <div className="flex items-center gap-3">
-          {/* List an Asset Button */}
+          {/* + List Your Item Primary Emerald Button */}
           <Link
             to="/list-your-item"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-headline text-xs font-bold bg-primary text-white hover:bg-primary-container shadow-[0_4px_12px_rgba(0,105,72,0.25)] active:scale-95 transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-headline text-xs font-bold bg-primary text-white hover:bg-primary-container shadow-[0_4px_14px_rgba(0,105,72,0.28)] active:scale-95 transition-all"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span className="material-symbols-outlined text-[18px]">add</span>
             List Your Item
           </Link>
 
           {isAuthenticated && user ? (
+            /* Authenticated User Profile Pill & Dropdown */
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-surface-container-high transition-all"
+                className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-surface-container-high transition-all cursor-pointer"
               >
                 <div className="relative">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-emerald-400 text-white font-bold text-xs flex items-center justify-center uppercase shadow-xs">
@@ -139,21 +124,27 @@ export const Navbar: React.FC = () => {
                     </span>
                   </div>
 
-                  <Link
-                    to="/admin"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low font-medium"
-                  >
-                    <span className="material-symbols-outlined text-[18px] text-primary">dashboard</span>
-                    Admin Operations Hub
-                  </Link>
+                  {user.role === "admin" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-primary">
+                        dashboard
+                      </span>
+                      Admin Operations
+                    </Link>
+                  )}
 
                   <Link
                     to="/list-your-item"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-on-surface hover:bg-surface-container-low font-medium"
                   >
-                    <span className="material-symbols-outlined text-[18px] text-primary">add_business</span>
+                    <span className="material-symbols-outlined text-[18px] text-primary">
+                      add_business
+                    </span>
                     List New Inventory
                   </Link>
 
@@ -168,6 +159,7 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           ) : (
+            /* Clean Public Log In & Register Buttons */
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
@@ -177,14 +169,14 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/register"
-                className="px-4 py-2 rounded-xl text-xs font-bold font-headline bg-primary text-white hover:bg-primary-container shadow-xs active:scale-95 transition-all"
+                className="px-4 py-2 rounded-xl text-xs font-bold font-headline bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface hover:text-primary transition-all"
               >
-                Join / Host
+                Register
               </Link>
             </div>
           )}
 
-          {/* Mobile Menu Hamburger */}
+          {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2 rounded-xl text-on-surface hover:bg-surface-container-low focus:outline-none"
@@ -209,21 +201,59 @@ export const Navbar: React.FC = () => {
             Explore Rentals
           </Link>
           <Link
-            to="/list-your-item"
+            to="/categories"
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-on-surface hover:bg-surface-container-low"
           >
-            <span className="material-symbols-outlined text-primary text-[20px]">add_circle</span>
-            List an Asset
+            <span className="material-symbols-outlined text-primary text-[20px]">category</span>
+            Categories
           </Link>
           <Link
-            to="/admin"
+            to="/how-it-works"
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-on-surface hover:bg-surface-container-low"
           >
-            <span className="material-symbols-outlined text-primary text-[20px]">dashboard</span>
-            Operations Hub
+            <span className="material-symbols-outlined text-primary text-[20px]">help_outline</span>
+            How It Works
           </Link>
+          <Link
+            to="/list-your-item"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-bold text-white bg-primary hover:bg-primary-container shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[20px]">add</span>
+            + List Your Item
+          </Link>
+
+          {!isAuthenticated ? (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-surface-container">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 text-center rounded-xl font-headline font-bold text-xs bg-surface-container-low text-on-surface"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 text-center rounded-xl font-headline font-bold text-xs border border-surface-container text-on-surface"
+              >
+                Register
+              </Link>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-error hover:bg-error-container/20 pt-2 border-t border-surface-container"
+            >
+              <span className="material-symbols-outlined text-[20px]">logout</span>
+              Sign Out
+            </button>
+          )}
         </div>
       )}
     </header>

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Item, Category } from "../types";
 import { itemsApi, categoriesApi } from "../services/api";
 import RentalCard from "../components/ui/RentalCard";
+import { SearchableCitySelect } from "../components/common/SearchableCitySelect";
 
 export const ExplorePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -156,18 +157,14 @@ export const ExplorePage: React.FC = () => {
 
               {/* Location Select */}
               <div className="md:col-span-3">
-                <select
+                <SearchableCitySelect
+                  variant="filter"
                   value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-surface-container text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                >
-                  <option value="all">All Sri Lanka Locations</option>
-                  <option value="colombo">Colombo (Western)</option>
-                  <option value="kandy">Kandy (Central)</option>
-                  <option value="galle">Galle (Southern)</option>
-                  <option value="negombo">Negombo (Airport)</option>
-                  <option value="jaffna">Jaffna (Northern)</option>
-                </select>
+                  onChange={(city) => setSelectedLocation(city)}
+                  allowAll
+                  allLabel="All Sri Lanka Locations"
+                  placeholder="Filter by city / hub"
+                />
               </div>
 
               {/* Sort By Select */}
