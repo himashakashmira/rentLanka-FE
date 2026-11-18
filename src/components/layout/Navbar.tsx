@@ -1,19 +1,68 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/store";
 import { logout } from "../../app/slices/authSlice";
+import {
+  Menu,
+  X,
+  Compass,
+  Layers,
+  HelpCircle,
+  Plus,
+  LogIn,
+  UserPlus,
+  LogOut,
+  TrendingUp,
+  LayoutDashboard,
+} from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  }, [location.pathname]);
+
+  // Prevent background scrolling on mobile when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
+  // Close desktop dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     dispatch(logout());
     setDropdownOpen(false);
+    setMobileMenuOpen(false);
     navigate("/");
   };
 
@@ -26,7 +75,11 @@ export const Navbar: React.FC = () => {
         {/* LEFT: BRAND LOGO */}
         {/* ========================================================================= */}
         <div className="flex items-center gap-4 shrink-0">
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 group"
+          >
             <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-[0_4px_14px_rgba(0,105,72,0.3)] group-hover:scale-105 transition-transform">
               <span className="material-symbols-outlined text-[22px]">key</span>
             </div>
@@ -37,7 +90,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* CENTER: CLEAN NAVIGATION LINKS ONLY (Explore Rentals | Categories | How It Works) */}
+        {/* CENTER: DESKTOP NAVIGATION LINKS ONLY (Hidden on Mobile < md) */}
         {/* ========================================================================= */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           <Link
@@ -75,13 +128,13 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* ========================================================================= */}
-        {/* RIGHT: + LIST YOUR ITEM (EMERALD) | LOG IN | REGISTER (OR USER DROPDOWN) */}
+        {/* RIGHT: DESKTOP ONLY ACTIONS (Hidden on Mobile < md) */}
         {/* ========================================================================= */}
-        <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3">
           {/* + List Your Item Primary Emerald Button */}
           <Link
             to="/list-your-item"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-headline text-xs font-bold bg-primary text-white hover:bg-primary-container shadow-[0_4px_14px_rgba(0,105,72,0.28)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-headline text-xs font-bold bg-primary text-white hover:bg-primary-container shadow-[0_4px_14px_rgba(0,105,72,0.28)] active:scale-95 transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             List Your Item
@@ -89,11 +142,13 @@ export const Navbar: React.FC = () => {
 
           {isAuthenticated && user ? (
             /* Authenticated User Profile Pill & Dropdown */
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-surface-container-high transition-all cursor-pointer"
+                aria-expanded={dropdownOpen}
+                aria-haspopup="true"
               >
                 <div className="relative">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-emerald-400 text-white font-bold text-xs flex items-center justify-center uppercase shadow-xs">
@@ -188,108 +243,174 @@ export const Navbar: React.FC = () => {
               </Link>
             </div>
           )}
+        </div>
 
-          {/* Mobile Menu Toggle Button */}
+        {/* ========================================================================= */}
+        {/* MOBILE ONLY: SLEEK HAMBURGER TOGGLE BUTTON (< md / < 768px) */}
+        {/* ========================================================================= */}
+        <div className="flex md:hidden items-center">
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl text-on-surface hover:bg-surface-container-low focus:outline-none"
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="p-2.5 rounded-xl text-on-surface hover:text-primary hover:bg-surface-container-low active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
             aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
           >
-            <span className="material-symbols-outlined text-[24px]">
-              {mobileMenuOpen ? "close" : "menu"}
-            </span>
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6 text-on-surface" />
+            ) : (
+              <Menu className="w-6 h-6 text-on-surface" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* ========================================================================= */}
+      {/* MOBILE SLIDE-DOWN DRAWER & BACKDROP OVERLAY */}
+      {/* ========================================================================= */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-surface-container-high px-4 py-4 space-y-2 shadow-lg animate-modal-enter">
-          <Link
-            to="/explore"
+        <>
+          {/* Backdrop Overlay */}
+          <div
+            className="fixed inset-0 top-20 bg-slate-950/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-on-surface hover:bg-surface-container-low"
-          >
-            <span className="material-symbols-outlined text-primary text-[20px]">explore</span>
-            Explore Rentals
-          </Link>
-          <Link
-            to="/categories"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-on-surface hover:bg-surface-container-low"
-          >
-            <span className="material-symbols-outlined text-primary text-[20px]">category</span>
-            Categories
-          </Link>
-          <Link
-            to="/how-it-works"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-on-surface hover:bg-surface-container-low"
-          >
-            <span className="material-symbols-outlined text-primary text-[20px]">help_outline</span>
-            How It Works
-          </Link>
-          <Link
-            to="/list-your-item"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-bold text-white bg-primary hover:bg-primary-container shadow-xs"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            + List Your Item
-          </Link>
+            aria-hidden="true"
+          />
 
-          {!isAuthenticated ? (
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-surface-container">
+          {/* Drawer Menu */}
+          <div className="md:hidden relative z-50 bg-white/98 backdrop-blur-2xl border-b border-surface-container-high/90 shadow-2xl px-5 py-5 space-y-4 animate-modal-enter max-h-[calc(100vh-5rem)] overflow-y-auto">
+            {/* Navigation Links */}
+            <div className="space-y-1">
               <Link
-                to="/login"
+                to="/explore"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-2.5 text-center rounded-xl font-headline font-bold text-xs bg-surface-container-low text-on-surface"
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm transition-colors ${
+                  isActive("/explore")
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-on-surface hover:bg-surface-container-low hover:text-primary"
+                }`}
               >
-                Log In
+                <Compass className={`w-5 h-5 ${isActive("/explore") ? "text-white" : "text-primary"}`} />
+                <span>Explore Rentals</span>
               </Link>
+
               <Link
-                to="/register"
+                to="/categories"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-2.5 text-center rounded-xl font-headline font-bold text-xs border border-surface-container text-on-surface"
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm transition-colors ${
+                  isActive("/categories")
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-on-surface hover:bg-surface-container-low hover:text-primary"
+                }`}
               >
-                Register
+                <Layers className={`w-5 h-5 ${isActive("/categories") ? "text-white" : "text-primary"}`} />
+                <span>Categories</span>
+              </Link>
+
+              <Link
+                to="/how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm transition-colors ${
+                  isActive("/how-it-works")
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-on-surface hover:bg-surface-container-low hover:text-primary"
+                }`}
+              >
+                <HelpCircle className={`w-5 h-5 ${isActive("/how-it-works") ? "text-white" : "text-primary"}`} />
+                <span>How It Works</span>
               </Link>
             </div>
-          ) : (
-            <div className="pt-2 border-t border-surface-container space-y-1">
-              {user?.role === "host" && (
+
+            {/* Subtle Divider */}
+            <div className="border-t border-surface-container-high/60" />
+
+            {/* Prominent Call to Action: + List Your Item */}
+            <Link
+              to="/list-your-item"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full py-3 px-4 rounded-xl font-headline font-bold text-sm bg-primary hover:bg-primary-container text-white shadow-[0_4px_14px_rgba(0,105,72,0.28)] flex items-center justify-center gap-2 transition-all active:scale-98"
+            >
+              <Plus className="w-5 h-5" />
+              <span>+ List Your Item</span>
+            </Link>
+
+            {/* Auth Section */}
+            {!isAuthenticated ? (
+              <div className="grid grid-cols-2 gap-3 pt-1">
                 <Link
-                  to="/host-dashboard"
+                  to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl font-headline font-semibold text-xs text-on-surface hover:bg-surface-container-low"
+                  className="w-full py-3 text-center rounded-xl font-headline font-bold text-sm bg-surface-container-low hover:bg-surface-container text-on-surface transition-all flex items-center justify-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-primary text-[18px]">monitoring</span>
-                  Host Dashboard &amp; Earnings
+                  <LogIn className="w-4 h-4 text-primary" />
+                  <span>Log In</span>
                 </Link>
-              )}
-              {user?.role === "admin" && (
                 <Link
-                  to="/admin"
+                  to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl font-headline font-semibold text-xs text-on-surface hover:bg-surface-container-low"
+                  className="w-full py-3 text-center rounded-xl font-headline font-bold text-sm border-2 border-primary text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-primary text-[18px]">dashboard</span>
-                  Admin Operations
+                  <UserPlus className="w-4 h-4 text-primary" />
+                  <span>Register</span>
                 </Link>
-              )}
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl font-headline font-semibold text-error hover:bg-error-container/20 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">logout</span>
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
+              </div>
+            ) : (
+              <div className="pt-2 border-t border-surface-container-high/60 space-y-2">
+                {/* User Profile Card */}
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-low border border-surface-container">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-emerald-400 text-white font-bold text-sm flex items-center justify-center uppercase shadow-xs shrink-0">
+                    {user?.name?.charAt(0) || "U"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold font-headline text-on-surface truncate">
+                      {user?.name}
+                    </div>
+                    <div className="text-xs text-on-surface-variant truncate">
+                      {user?.email}
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary-fixed text-on-primary-fixed shrink-0">
+                    {user?.role === "host" ? "SuperHost" : user?.role}
+                  </span>
+                </div>
+
+                {/* Host Dashboard Link */}
+                {user?.role === "host" && (
+                  <Link
+                    to="/host-dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm text-on-surface hover:bg-surface-container-low transition-colors"
+                  >
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span>Host Dashboard &amp; Earnings</span>
+                  </Link>
+                )}
+
+                {/* Admin Operations Link */}
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm text-on-surface hover:bg-surface-container-low transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-primary" />
+                    <span>Admin Operations</span>
+                  </Link>
+                )}
+
+                {/* Sign Out Button */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm text-error hover:bg-error-container/20 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 text-error" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </header>
   );
