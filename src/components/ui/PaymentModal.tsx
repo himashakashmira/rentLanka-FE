@@ -73,7 +73,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           security_deposit: rentalData.deposit,
           platform_fee: rentalData.platformFee,
           payment_method: activeTab === "card" ? "LankaPay / Visa / Master" : "Pay on Pickup (Cash / QR)",
-          status: "Confirmed",
+          status: "Pending",
         };
 
         const created = await bookingsApi.create(payload);
@@ -388,11 +388,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveTab("card")}
-                    className={`py-2 px-3 rounded-xl text-xs font-headline font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                      activeTab === "card"
+                    className={`py-2 px-3 rounded-xl text-xs font-headline font-bold flex items-center justify-center gap-1.5 border transition-all ${activeTab === "card"
                         ? "bg-primary text-white border-primary shadow-xs"
                         : "bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container"
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[16px]">credit_card</span>
                     LankaPay / Visa / Master
@@ -401,11 +400,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveTab("lankaqr")}
-                    className={`py-2 px-3 rounded-xl text-xs font-headline font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                      activeTab === "lankaqr"
+                    className={`py-2 px-3 rounded-xl text-xs font-headline font-bold flex items-center justify-center gap-1.5 border transition-all ${activeTab === "lankaqr"
                         ? "bg-primary text-white border-primary shadow-xs"
                         : "bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container"
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
                     Pay on Pickup (Cash / QR)

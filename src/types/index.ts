@@ -56,6 +56,8 @@ export interface Booking {
   item_title: string;
   item_image?: string;
   item_location?: string;
+  host_id?: string;
+  owner_name?: string;
   renter_name: string;
   renter_email?: string;
   renter_phone: string;
@@ -69,7 +71,7 @@ export interface Booking {
   platform_fee: number;
   payment_method: string;
   booking_reference: string;
-  status: "Pending" | "Confirmed" | "Rejected";
+  status: "Pending" | "Confirmed" | "Rejected" | "Cancelled";
   createdAt: string;
   updatedAt?: string;
 }

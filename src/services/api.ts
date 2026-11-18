@@ -155,10 +155,21 @@ export const itemsApi = {
 
 // ============ BOOKINGS API ============
 export const bookingsApi = {
-  getAll: async (status?: string): Promise<Booking[]> => {
-    const url = status && status !== "All"
-      ? `${API_BASE_URL}/bookings?status=${status}`
-      : `${API_BASE_URL}/bookings`;
+  getAll: async (
+    filter?: string | { status?: string; renter_email?: string; host_id?: string; renter_nic?: string }
+  ): Promise<Booking[]> => {
+    let url = `${API_BASE_URL}/bookings`;
+    if (typeof filter === "string") {
+      if (filter && filter !== "All") url += `?status=${encodeURIComponent(filter)}`;
+    } else if (filter) {
+      const q = new URLSearchParams();
+      if (filter.status && filter.status !== "All") q.append("status", filter.status);
+      if (filter.renter_email) q.append("renter_email", filter.renter_email);
+      if (filter.host_id) q.append("host_id", filter.host_id);
+      if (filter.renter_nic) q.append("renter_nic", filter.renter_nic);
+      const qs = q.toString();
+      if (qs) url += `?${qs}`;
+    }
     const res = await fetch(url, { headers: getAuthHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to load bookings");
@@ -185,7 +196,7 @@ export const bookingsApi = {
 
   updateStatus: async (
     id: string,
-    status: "Pending" | "Confirmed" | "Rejected",
+    status: "Pending" | "Confirmed" | "Rejected" | "Cancelled",
     itemId?: string
   ): Promise<Booking> => {
     const res = await fetch(`${API_BASE_URL}/bookings/${id}/status`, {

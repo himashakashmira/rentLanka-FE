@@ -10,6 +10,7 @@ import RentalDetailsPage from "./pages/RentalDetailsPage";
 import ListItemPage from "./pages/ListItemPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import HostDashboardPage from "./pages/HostDashboardPage";
+import MyBookingsPage from "./pages/MyBookingsPage";
 import AuthPage from "./pages/AuthPage";
 import ChatBot from "./components/ui/ChatBot";
 
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
             <Route path="/list-your-item" element={<ListItemPage />} />
             <Route path="/host-dashboard" element={<HostDashboardPage />} />
             <Route path="/my-listings" element={<HostDashboardPage initialTab="inventory" />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/login" element={<AuthPage initialMode="login" />} />
             <Route path="/register" element={<AuthPage initialMode="register" />} />

@@ -14,6 +14,7 @@ import {
   LogOut,
   TrendingUp,
   LayoutDashboard,
+  CalendarCheck,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
@@ -178,6 +179,17 @@ export const Navbar: React.FC = () => {
                       {user.role} Verified
                     </span>
                   </div>
+
+                  <Link
+                    to="/my-bookings"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container-low font-semibold transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-primary">
+                      receipt_long
+                    </span>
+                    My Bookings
+                  </Link>
 
                   {user.role === "host" && (
                     <Link
@@ -373,6 +385,16 @@ export const Navbar: React.FC = () => {
                     {user?.role === "host" ? "SuperHost" : user?.role}
                   </span>
                 </div>
+
+                {/* My Bookings Link */}
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl font-headline font-semibold text-sm text-on-surface hover:bg-surface-container-low transition-colors"
+                >
+                  <CalendarCheck className="w-4 h-4 text-primary" />
+                  <span>My Bookings</span>
+                </Link>
 
                 {/* Host Dashboard Link */}
                 {user?.role === "host" && (

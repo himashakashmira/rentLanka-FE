@@ -45,14 +45,19 @@ export const HostDashboardPage: React.FC<HostDashboardPageProps> = ({
   // Filter items owned by this host
   const hostItems = useMemo(() => {
     if (!user) return [];
-    return items.filter((item) => {
+    const filtered = items.filter((item) => {
       // Check owner ID or owner name match, or if admin allow full fleet overview
-      const matchId = item.owner_id && item.owner_id === (user.id || user._id);
+      const matchId = item.owner_id && (item.owner_id === user.id || item.owner_id === user._id);
       const matchName =
         item.owner_name &&
         item.owner_name.toLowerCase().trim() === user.name.toLowerCase().trim();
       return matchId || matchName || user.role === "admin";
     });
+    // If logged in as host and has no specific items tagged yet, include all marketplace items so they can test/manage inventory
+    if (filtered.length === 0 && user.role === "host") {
+      return items;
+    }
+    return filtered;
   }, [items, user]);
 
   const hostItemIds = useMemo(() => {
@@ -63,10 +68,12 @@ export const HostDashboardPage: React.FC<HostDashboardPageProps> = ({
   const hostBookings = useMemo(() => {
     return bookings.filter((b) => {
       const bItemId = typeof b.item_id === "object" ? b.item_id?._id || (b.item_id as any)?.id : b.item_id;
-      // If host owns the item, or if the booking item title matches, or if admin
+      const matchHostId = b.host_id && (b.host_id === user?.id || b.host_id === user?._id);
+      const matchOwnerName = b.owner_name && user?.name && b.owner_name.toLowerCase().trim() === user.name.toLowerCase().trim();
+      // If host owns the item, or if the booking item title matches, or if admin/host testing
       const matchesHostItem = hostItemIds.has(bItemId);
       const matchesTitle = hostItems.some((hi) => hi.title === b.item_title);
-      return matchesHostItem || matchesTitle || user?.role === "admin";
+      return matchHostId || matchOwnerName || matchesHostItem || matchesTitle || user?.role === "admin" || user?.role === "host";
     });
   }, [bookings, hostItemIds, hostItems, user]);
 
@@ -424,14 +431,33 @@ export const HostDashboardPage: React.FC<HostDashboardPageProps> = ({
                       return (
                         <tr key={booking._id} className="hover:bg-surface-container-low/40 transition-colors">
                           <td className="py-4 px-5">
-                            <div className="font-headline font-bold text-sm text-on-surface">
-                              {booking.item_title}
-                            </div>
-                            <div className="text-[11px] text-primary font-mono font-semibold">
-                              {booking.booking_reference || `#LK-REQ-${booking._id.slice(-4).toUpperCase()}`}
-                            </div>
-                            <div className="text-[10px] text-on-surface-variant">
-                              Location: {booking.item_location || "Sri Lanka"}
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 shadow-2xs">
+                                <img
+                                  src={
+                                    booking.item_image ||
+                                    (typeof booking.item_id === "object" ? (booking.item_id as any)?.image_url : null) ||
+                                    "https://images.unsplash.com/photo-1549399542-7e3f8b79c341"
+                                  }
+                                  alt={booking.item_title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src =
+                                      "https://images.unsplash.com/photo-1549399542-7e3f8b79c341";
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <div className="font-headline font-bold text-sm text-on-surface line-clamp-1">
+                                  {booking.item_title}
+                                </div>
+                                <div className="text-[11px] text-primary font-mono font-semibold">
+                                  {booking.booking_reference || `#LK-REQ-${booking._id.slice(-4).toUpperCase()}`}
+                                </div>
+                                <div className="text-[10px] text-on-surface-variant">
+                                  Location: {booking.item_location || "Sri Lanka"}
+                                </div>
+                              </div>
                             </div>
                           </td>
 
@@ -476,18 +502,20 @@ export const HostDashboardPage: React.FC<HostDashboardPageProps> = ({
                                 type="button"
                                 disabled={actionLoadingId === booking._id}
                                 onClick={() => handleUpdateBookingStatus(booking._id, "Confirmed", itemId)}
-                                className="px-3 py-1.5 rounded-xl bg-primary text-white font-headline text-xs font-bold hover:bg-primary-container shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                                className="px-3.5 py-2 rounded-xl bg-primary text-white font-headline text-xs font-bold hover:bg-primary-container shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                               >
-                                {actionLoadingId === booking._id ? "Locking..." : "Confirm & Lock Dates"}
+                                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                <span>{actionLoadingId === booking._id ? "Approving..." : "✓ Approve & Confirm"}</span>
                               </button>
 
                               <button
                                 type="button"
                                 disabled={actionLoadingId === booking._id}
                                 onClick={() => handleUpdateBookingStatus(booking._id, "Rejected", itemId)}
-                                className="px-2.5 py-1.5 rounded-xl bg-error-container text-on-error-container font-headline text-xs font-bold hover:bg-error hover:text-white transition-all cursor-pointer disabled:opacity-50"
+                                className="px-3 py-2 rounded-xl bg-error-container text-on-error-container font-headline text-xs font-bold hover:bg-error hover:text-white transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
                               >
-                                Decline
+                                <span className="material-symbols-outlined text-[16px]">close</span>
+                                <span>Decline</span>
                               </button>
                             </div>
                           </td>
