@@ -4,6 +4,8 @@ import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
+import CategoriesPage from "./pages/CategoriesPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import RentalDetailsPage from "./pages/RentalDetailsPage";
 import ListItemPage from "./pages/ListItemPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
@@ -20,8 +22,8 @@ export const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/explore" element={<ExplorePage />} />
-            <Route path="/categories" element={<ExplorePage />} />
-            <Route path="/how-it-works" element={<HomePage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/rentals/:id" element={<RentalDetailsPage />} />
             <Route path="/list-your-item" element={<ListItemPage />} />
             <Route path="/host-dashboard" element={<HostDashboardPage />} />
