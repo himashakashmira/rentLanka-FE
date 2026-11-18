@@ -1,7 +1,7 @@
 import { Item, Booking, Category, User } from "../types";
 
 export const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5000/api/v1";
+  process.env.REACT_APP_API_URL || "https://rent-lanka-be.vercel.app/api/v1";
 
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem("rentlanka_token");
