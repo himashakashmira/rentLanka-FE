@@ -283,6 +283,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </div>
               </div>
 
+              {/* Automated Email Notification Note */}
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-left flex items-start gap-2.5">
+                <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">
+                  mark_email_read
+                </span>
+                <div>
+                  <p className="text-xs text-emerald-950 font-bold">
+                    ✓ Confirmation email and digital rental voucher have been dispatched to your email address ({rentalData.renterEmail || currentUser?.email || "your email"}).
+                  </p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    Please check your inbox or spam folder for your official receipt and LankaPay escrow voucher.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <button
                   type="button"

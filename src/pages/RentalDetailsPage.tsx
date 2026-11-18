@@ -836,6 +836,22 @@ export const RentalDetailsPage: React.FC = () => {
           {/* RIGHT 5 COLS: DYNAMIC BOOKING CALCULATOR & CHECKOUT */}
           <div className="lg:col-span-5 sticky top-28 space-y-4">
             <div className="p-6 rounded-3xl bg-white border-2 border-surface-container shadow-xl space-y-4">
+              {/* Confirmed Booking Feedback Note with Email Dispatch Notice */}
+              {bookingConfirmed && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs text-emerald-950 space-y-2 animate-in fade-in">
+                  <div className="flex items-center gap-2 font-bold text-sm text-[#006948]">
+                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                    <span>Booking Authorized (#{bookingConfirmed.booking_reference})</span>
+                  </div>
+                  <p className="font-semibold text-emerald-900 leading-relaxed">
+                    ✓ Confirmation email and digital rental voucher have been dispatched to your email address ({bookingConfirmed.renter_email || user?.email || "your email"}).
+                  </p>
+                  <p className="text-[11px] text-emerald-800">
+                    Your refundable security deposit is held safely in LankaPay escrow and released upon equipment check-in.
+                  </p>
+                </div>
+              )}
+
               {/* Daily Rate Header */}
               <div className="flex items-baseline justify-between pb-3 border-b border-surface-container">
                 <div>
